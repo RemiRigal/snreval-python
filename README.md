@@ -5,9 +5,20 @@ This repository provides a small Python wrapper for the Matlab tool SNR Eval pro
 
 ## Installation
 
-- Install the compiled version of [SNREval](https://labrosa.ee.columbia.edu/projects/snreval).
+### Prerequisites
 
-- Clone this repository and install the requirements and the Python package:
+Install the compiled version of [SNREval](https://labrosa.ee.columbia.edu/projects/snreval).
+
+### Install using Pip
+
+Install with pip:
+```bash
+pip install snreval
+```
+
+### Build from source
+
+Clone this repository and install the requirements and the Python package:
 ```bash
 pip install -r requirements.txt
 python setup.py install
