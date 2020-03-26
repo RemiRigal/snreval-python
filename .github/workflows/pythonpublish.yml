@@ -28,7 +28,7 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Publish
-    - if: startsWith(github.event.ref, 'refs/tags')
+      if: startsWith(github.event.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.PYPI_PASSWORD }}
