@@ -3,8 +3,9 @@
 
 import os
 import shlex
+import signal
 import pandas as pd
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 
 
 class SNREval(object):
@@ -23,20 +24,27 @@ class SNREval(object):
         self.disp = 0
         self.guessvad = 0
 
-    def eval(self, wave_file):
+    def eval(self, wave_file, timeout=None):
         """
         Note: it takes around 4 sec to load the script and ~0.1 sec to process a single file
         :type wave_file: str
         :param wave_file: Path to a .wav file or a .txt file listing .wav files
+        :type timeout: float
+        :param timeout: Timeout for the snreval process
         :rtype: pd.DataFrame
         :return: A DataFrame object containing estimated STNR and WADA SNR
         """
         if not os.path.exists(wave_file):
             raise IOError("File not found: {}".format(wave_file))
         command = self._get_command(wave_file)
-        process = Popen(command, stdout=PIPE, stderr=PIPE)
-        result, errors = process.communicate()
-        return self._parse_result(str(result))
+        process = Popen(command, stdout=PIPE, stderr=PIPE, preexec_fn=os.setsid)
+        try:
+            result, errors = process.communicate(timeout=timeout)
+        except TimeoutExpired:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            process.kill()
+            result, errors = process.communicate()
+        return self._parse_result(result.decode())
 
     def _get_command(self, file_path):
         """
@@ -61,5 +69,8 @@ class SNREval(object):
         data = list()
         for line in result:
             splitted = line.split("\t")
-            data.append([splitted[0], float(splitted[4]), float(splitted[5])])
+            try:
+                datum = [splitted[0], float(splitted[4]), float(splitted[5])]
+                data.append(datum)
+            except IndexError: pass
         return pd.DataFrame(data, columns=self._DATAFRAME_COLUMNS)
